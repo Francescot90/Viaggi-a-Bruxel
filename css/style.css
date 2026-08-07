@@ -344,6 +344,21 @@ a{ color:var(--green-2); }
 .tel--sos{ background:var(--oxblood); }
 
 /* ============================================================
+   Tasto "Portami lì" dentro le tappe
+   ============================================================ */
+.gobtn{
+  display:flex; align-items:center; justify-content:center; gap:.5rem;
+  width:100%; margin-top:1.1rem;
+  background:var(--green); color:#F5F2E7 !important;
+  text-decoration:none; font-weight:600; font-size:.95rem;
+  padding:.85rem 1rem; border-radius:12px;
+  border:1px solid var(--ink);
+}
+.gobtn:active{ transform:scale(.985); }
+.gobtn svg{ flex:none; }
+.gobtn small{ display:block; font-weight:400; opacity:.75; font-size:.78rem; }
+
+/* ============================================================
    Frasi in francese
    ============================================================ */
 .phrase{
