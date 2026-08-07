@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+<meta name="theme-color" content="#173B31">
+<title>Mappa del viaggio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:SOFT,WONK,opsz,wght@0..100,0..1,9..144,400..700&family=Libre+Franklin:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  #map{ height:62vh; min-height:340px; width:100%; background:#DFDCD2; }
+  .maparea{ border-top:1px solid var(--line); border-bottom:1px solid var(--line); position:relative; }
+  .maptools{
+    display:flex; gap:.4rem; overflow-x:auto; padding:.7rem var(--sp);
+    background:var(--paper-2); border-bottom:1px solid var(--line);
+    -webkit-overflow-scrolling:touch;
+  }
+  .maptools::-webkit-scrollbar{ display:none; }
+  .fbtn{
+    flex:none; font:inherit; font-size:.82rem; font-weight:600;
+    border:1px solid var(--line); background:var(--paper);
+    color:var(--muted); border-radius:99px; padding:.45rem .8rem; cursor:pointer;
+  }
+  .fbtn[aria-pressed="true"]{ background:var(--green); color:#F5F2E7; border-color:var(--green); }
+  .locbtn{
+    position:absolute; right:12px; bottom:12px; z-index:500;
+    background:var(--green); color:#F5F2E7; border:0; border-radius:99px;
+    font:inherit; font-size:.86rem; font-weight:600; padding:.7rem 1rem;
+    box-shadow:0 4px 14px rgba(14,31,26,.3); cursor:pointer;
+  }
+  .pin{
+    display:grid; place-items:center;
+    width:26px; height:26px; border-radius:50% 50% 50% 4px;
+    transform:rotate(-45deg);
+    color:#fff; font-size:.72rem; font-weight:700;
+    border:2px solid rgba(255,255,255,.85);
+    box-shadow:0 2px 6px rgba(0,0,0,.35);
+  }
+  .pin span{ transform:rotate(45deg); }
+  .leaflet-popup-content{ font-family:"Libre Franklin",sans-serif; margin:.7rem .9rem; }
+  .pop__name{ font-weight:700; font-size:.98rem; display:block; margin-bottom:.1rem; }
+  .pop__day{ color:#5C6B64; font-size:.8rem; display:block; margin-bottom:.5rem; }
+  .pop__go{
+    display:inline-block; background:#173B31; color:#F5F2E7 !important;
+    text-decoration:none; font-weight:600; font-size:.84rem;
+    padding:.45rem .8rem; border-radius:99px;
+  }
+  .plist h3{ margin:1.6rem 0 .6rem; font-size:1.05rem; }
+  .prow{
+    display:flex; align-items:center; gap:.7rem;
+    padding:.7rem 0; border-bottom:1px solid var(--line);
+  }
+  .pdot{ flex:none; width:11px; height:11px; border-radius:50%; }
+  .pname{ flex:1; font-size:.96rem; font-weight:500; }
+  .pgo{
+    flex:none; font-size:.8rem; font-weight:600; text-decoration:none;
+    color:var(--green-2); border:1px solid var(--line);
+    border-radius:99px; padding:.35rem .7rem; background:var(--paper-2);
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar__in">
+    <a class="back" href="index.html">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M19 12H6M11 6l-6 6 6 6"/></svg>
+      Tutti i giorni
+    </a>
+    <span class="topbar__title">Mappa</span>
+  </div>
+</div>
+
+<div class="maptools" id="tools"></div>
+<div class="maparea">
+  <div id="map"></div>
+  <button class="locbtn" id="loc" type="button">◎ Dove sono</button>
+</div>
+
+<main>
+  <section class="section section--tight">
+    <div class="wrap">
+      <div class="note note--calm">
+        <strong>Come si usa</strong>
+        <p>I colori sono i giorni. Toccate un punto sulla mappa e poi <strong>Portami lì</strong>: si apre Google Maps con le indicazioni a piedi e la voce che vi guida. Il tasto <strong>Dove sono</strong> in basso mostra la vostra posizione.</p>
+      </div>
+      <div id="list" class="plist"></div>
+    </div>
+  </section>
+
+  <section class="section section--tight">
+    <div class="wrap">
+      <div class="panel">
+        <p class="eyebrow">Una cosa rassicurante</p>
+        <p style="margin-bottom:0">Tolti l'Atomium e Bruges, <strong>tutto il viaggio sta dentro un chilometro e mezzo</strong>. Anche se vi perdete, siete a un quarto d'ora a piedi dall'hotel.</p>
+      </div>
+      <div class="pager">
+        <a href="index.html">← Tutti i giorni</a>
+        <a href="info.html">Info utili →</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap"><p style="margin:0">Mappe © OpenStreetMap</p></div>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="js/luoghi.js"></script>
+<script>
+(function () {
+  'use strict';
+  var DAYS = {
+    0: { nome: 'Base',        col: '#3A4A44' },
+    1: { nome: 'Sabato',      col: '#C08A2E' },
+    2: { nome: 'Domenica',    col: '#8A3324' },
+    3: { nome: 'Lunedì',      col: '#215045' },
+    4: { nome: 'Martedì',     col: '#4A6FA5' },
+    5: { nome: 'Mercoledì',   col: '#6B4E71' }
+  };
+
+  var map = L.map('map', { zoomControl: true, scrollWheelZoom: false })
+             .setView([50.8460, 4.3520], 14);
+
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+
+  function mapsUrl(p) {
+    return 'https://www.google.com/maps/dir/?api=1&travelmode=walking&destination=' +
+           encodeURIComponent(p.q);
+  }
+
+  function icon(p) {
+    var c = DAYS[p.g].col;
+    return L.divIcon({
+      className: '',
+      html: '<div class="pin" style="background:' + c + '"><span>' + (p.g || '★') + '</span></div>',
+      iconSize: [26, 26],
+      iconAnchor: [13, 24],
+      popupAnchor: [0, -22]
+    });
+  }
+
+  var markers = [];
+  LUOGHI.forEach(function (p) {
+    var m = L.marker([p.lat, p.lng], { icon: icon(p) }).addTo(map);
+    m.bindPopup(
+      '<span class="pop__name">' + p.n + '</span>' +
+      '<span class="pop__day">' + DAYS[p.g].nome + (p.d ? ' · ' + p.d : '') + '</span>' +
+      '<a class="pop__go" target="_blank" rel="noopener" href="' + mapsUrl(p) + '">Portami lì a piedi</a>'
+    );
+    m._g = p.g;
+    m._zona = p.z;
+    markers.push(m);
+  });
+
+  /* filtri */
+  var tools = document.getElementById('tools');
+  var filtri = [
+    { k: 'bxl', t: 'Bruxelles' },
+    { k: 'bru', t: 'Bruges' },
+    { k: 1, t: 'Sabato' },
+    { k: 2, t: 'Domenica' },
+    { k: 3, t: 'Lunedì' },
+    { k: 4, t: 'Martedì' },
+    { k: 5, t: 'Mercoledì' }
+  ];
+
+  function applica(k) {
+    var visibili = [];
+    markers.forEach(function (m) {
+      var ok;
+      if (k === 'bxl')      ok = m._zona === 'bxl';
+      else if (k === 'bru') ok = m._zona === 'bru';
+      else                  ok = (m._g === k || m._g === 0);
+      m.setOpacity(ok ? 1 : 0);
+      m._icon.style.pointerEvents = ok ? 'auto' : 'none';
+      if (ok) visibili.push(m.getLatLng());
+    });
+    if (visibili.length) {
+      map.fitBounds(L.latLngBounds(visibili), { padding: [45, 45], maxZoom: 16 });
+    }
+    Array.prototype.forEach.call(tools.children, function (b) {
+      b.setAttribute('aria-pressed', String(b.dataset.k === String(k)));
+    });
+  }
+
+  filtri.forEach(function (f) {
+    var b = document.createElement('button');
+    b.className = 'fbtn';
+    b.type = 'button';
+    b.textContent = f.t;
+    b.dataset.k = f.k;
+    b.setAttribute('aria-pressed', 'false');
+    b.addEventListener('click', function () {
+      applica(isNaN(Number(f.k)) ? f.k : Number(f.k));
+    });
+    tools.appendChild(b);
+  });
+  applica('bxl');
+
+  /* posizione */
+  var cerchio = null, punto = null;
+  document.getElementById('loc').addEventListener('click', function () {
+    var btn = this;
+    if (!navigator.geolocation) { btn.textContent = 'GPS non disponibile'; return; }
+    btn.textContent = '◎ Cerco…';
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      var ll = [pos.coords.latitude, pos.coords.longitude];
+      if (punto) { map.removeLayer(punto); map.removeLayer(cerchio); }
+      cerchio = L.circle(ll, { radius: pos.coords.accuracy, color: '#4A6FA5', weight: 1, fillOpacity: .12 }).addTo(map);
+      punto = L.circleMarker(ll, { radius: 8, color: '#fff', weight: 3, fillColor: '#4A6FA5', fillOpacity: 1 }).addTo(map);
+      punto.bindPopup('Siete qui').openPopup();
+      map.setView(ll, 16);
+      btn.textContent = '◎ Dove sono';
+    }, function () {
+      btn.textContent = 'Posizione negata';
+      setTimeout(function () { btn.textContent = '◎ Dove sono'; }, 2500);
+    }, { enableHighAccuracy: true, timeout: 10000 });
+  });
+
+  /* elenco sotto la mappa */
+  var list = document.getElementById('list');
+  [1, 2, 3, 4, 5, 0].forEach(function (g) {
+    var gruppo = LUOGHI.filter(function (p) { return p.g === g; });
+    if (!gruppo.length) return;
+    var h = document.createElement('h3');
+    h.textContent = g === 0 ? 'Punti fissi' : DAYS[g].nome;
+    list.appendChild(h);
+    gruppo.forEach(function (p) {
+      var row = document.createElement('div');
+      row.className = 'prow';
+      row.innerHTML =
+        '<span class="pdot" style="background:' + DAYS[p.g].col + '"></span>' +
+        '<span class="pname">' + p.n + '</span>' +
+        '<a class="pgo" target="_blank" rel="noopener" href="' + mapsUrl(p) + '">Portami lì</a>';
+      list.appendChild(row);
+    });
+  });
+})();
+</script>
+</body>
+</html>
