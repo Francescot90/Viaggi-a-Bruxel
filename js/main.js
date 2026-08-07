@@ -2,6 +2,13 @@
 (function () {
   'use strict';
 
+  /* Salva il sito sul telefono: dopo la prima apertura funziona anche offline */
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function () {});
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     document.body.classList.add('loaded');
 
