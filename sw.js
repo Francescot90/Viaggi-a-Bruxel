@@ -1,6 +1,6 @@
 /* Tiene il sito in memoria sul telefono: dopo la prima apertura
    funziona anche senza rete. */
-var CACHE = 'bruxelles-v1';
+var CACHE = 'bruxelles-v2';
 var FILE = [
   './', 'index.html',
   'sabato.html', 'domenica.html', 'lunedi.html', 'martedi.html', 'mercoledi.html',
